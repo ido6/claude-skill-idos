@@ -1,6 +1,6 @@
 ---
 name: idos
-description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), asks unlimited clarifying questions in rounds, discovers which skills the task needs and when each fires, writes the plan to a file, gets approval, then hands off to Sonnet 5 for the build.
+description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), asks unlimited clarifying questions in rounds, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then hands off to Sonnet 5 for the build.
 ---
 
 # idos — Plan First, Build Later
@@ -43,7 +43,11 @@ Cover, as relevant:
 
 Keep going until a competent stranger could build the right thing from the plan alone. Never guess on anything that changes the outcome.
 
-## Step 2 — Map and source the skills
+## Step 2 — Map and source the capabilities
+
+Three kinds of capability can cover a phase: **skills** (knowledge/workflow), **connectors** (MCP servers — live access to an external service's data), and **plugins** (bundles of skills/commands/agents/MCP for a whole domain). Skills are the common case; check the other two only when the trigger below fires.
+
+### 2a — Skills (always)
 
 Go phase by phase (using the phase list you're about to lock in Step 3, or a rough mental pass if phases aren't final yet). For each phase, find the best skill coverage — installed first, external second. Do this for every phase, not just the ones that feel skill-shaped; a phase with no good skill is still worth one search before you conclude that.
 
@@ -56,6 +60,27 @@ Only include skills the task genuinely benefits from — no padding for coverage
 
 For each skill you land on, record: **which phase**, **why**, and **source** — `installed` or `external: <owner/repo@skill>`. External skills are not installed yet at this point; that happens in Step 4, after Ido approves the list.
 
+### 2b — Connectors (only if a phase needs live external data)
+
+**Trigger:** a phase has to read or write real data in an external service — Figma files, Linear/Jira issues, Notion pages, a Supabase/Postgres database, Slack, Vercel deployments, Sentry errors. If every phase is self-contained in the repo, skip this entirely.
+
+1. **Check what's already connected.** The session lists its MCP servers, including which are connected, still connecting, and which need authentication. An already-connected server needs nothing.
+2. **Search for gaps.** Load the registry tools via `ToolSearch` (`mcp__mcp-registry__search_mcp_registry`, `suggest_connectors`, `list_connectors`) and search for the service the phase needs.
+3. **Record the auth reality.** Most connectors need OAuth or an API token. **You cannot authorize them** — the user does that in their claude.ai connector settings, or via `claude mcp add ...` / `/mcp` in an interactive session. Note per connector whether it's already authorized, needs auth, or needs installing from scratch.
+
+Record: which phase, why, and status — `connected` / `needs auth` / `not installed`.
+
+### 2c — Plugins (only if a phase wants a whole domain toolkit)
+
+**Trigger:** a phase would pull in several related skills/commands/agents at once, or a vendor ships an official plugin for exactly this stack. One skill's worth of need is a skill, not a plugin — don't reach for a plugin to solve a single problem.
+
+- `claude plugin list` — what's already installed.
+- `claude plugin marketplace list` — configured marketplaces. Add one with `claude plugin marketplace add <github-repo-or-url>`.
+- `claude plugin install <plugin>@<marketplace>` — the install command to hand over.
+- `claude plugin details <name>` — component inventory and **projected token cost**. Check this before recommending: a plugin that loads a large surface into every session is a real cost, so only recommend one whose value clears it.
+
+Record: which phase, why, install command, and token cost from `details`.
+
 ## Step 3 — Write the plan to a file
 
 Fill in `plan-template.md` (next to this file) and write the result to **`PLAN-<slug>.md`** in the working directory — `<slug>` being a short kebab-case name for the task. Never leave the plan as chat-only: the build session starts fresh and cannot see this conversation.
@@ -64,14 +89,24 @@ Match depth to the task. A plan longer than the work it describes is its own pro
 
 ## Step 4 — Approval gate
 
-Show Ido the plan (or a tight summary of it plus the file path), **and the external-skill install list from Step 2 as its own callout** — name, phase, install count/source, install command. Ask for approval on both. Apply any edits he asks for and rewrite the file. **Do not proceed until he approves.**
+Show Ido the plan (or a tight summary of it plus the file path), **and everything Step 2 wants to add as its own callout**, split into what you can do and what only he can:
+
+- **Skills to install** — name, phase, install count/source.
+- **Connectors** — name, phase, and whether it needs auth.
+- **Plugins** — name, phase, install command, projected token cost.
+
+Ask for approval on the plan and on each addition. Apply any edits he asks for and rewrite the file. **Do not proceed until he approves.**
 
 On approval:
-- For each approved external skill, run `npx skills add <owner/repo@skill> -g -y`.
-- If an install fails or the package doesn't exist as named, say so plainly — don't paper over it — and continue with the rest.
-- Mark each skill in the plan's skill map as `installed` once done.
+- **Skills** — run `npx skills add <owner/repo@skill> -g -y` for each approved one.
+- **Plugins** — run `claude plugin install <plugin>@<marketplace>` (adding the marketplace first if needed).
+- **Connectors** — **hand these to Ido, don't attempt them.** Give the exact step: claude.ai connector settings for claude.ai connectors, or `claude mcp add ...` / `/mcp` in an interactive session for the rest. OAuth cannot run from inside this session, so a connector is only ready when he says it is.
 
-If Ido declines an external skill, drop it from the plan's skill map and proceed without it — don't substitute a different one without asking.
+If an install fails or the package doesn't exist as named, say so plainly — don't paper over it — and continue with the rest. Mark each entry's real status in the plan's capability map.
+
+If Ido declines something, drop it from the map and proceed without it — don't substitute a different one without asking.
+
+**If a phase depends on a connector that isn't authorized yet, say so in the handoff** — the build session will hit a wall there otherwise.
 
 Do not start building here — the planning model plans, Sonnet builds.
 

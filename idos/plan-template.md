@@ -30,15 +30,19 @@
 ## 4. Risks & open questions
 - **<risk>:** <impact> → <fallback>
 
-## 5. Skill map
-<One row per skill, in firing order. Source is `installed` or `external`.>
+## 5. Capability map
+<One row per capability, in firing order. Type is skill / connector / plugin.>
 
-| # | Skill | Phase | Source | Status |
-|---|-------|-------|--------|--------|
-| 1 | `<skill>` | Phase <n> | installed | ready |
-| 2 | `<owner/repo@skill>` | Phase <n> | external (<installs>, <source repo>) | installed / declined |
+| # | Capability | Type | Phase | Source | Status |
+|---|-----------|------|-------|--------|--------|
+| 1 | `<skill>` | skill | Phase <n> | installed | ready |
+| 2 | `<owner/repo@skill>` | skill | Phase <n> | external (<installs>, <repo>) | installed / declined |
+| 3 | `<service>` | connector | Phase <n> | MCP | connected / **needs auth** / declined |
+| 4 | `<plugin>@<marketplace>` | plugin | Phase <n> | marketplace (<token cost>) | installed / declined |
 
-<Phases with no good skill match, if any: `Phase <n> — no skill found, proceeding without one`>
+<Phases with no match, if any: `Phase <n> — nothing found, proceeding without.`>
+
+**Blockers:** <Any connector still unauthorized, and which phase stalls on it. Delete this line if none.>
 
 ## 6. Model switches
 - **Now → Sonnet 5** (`claude-sonnet-5`) before Phase 1.
