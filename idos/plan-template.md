@@ -31,12 +31,14 @@
 - **<risk>:** <impact> → <fallback>
 
 ## 5. Skill map
-<Flat list, in firing order.>
+<One row per skill, in firing order. Source is `installed` or `external`.>
 
-1. `<skill>` — Phase <n>
-2. `<skill>` — Phase <n>
+| # | Skill | Phase | Source | Status |
+|---|-------|-------|--------|--------|
+| 1 | `<skill>` | Phase <n> | installed | ready |
+| 2 | `<owner/repo@skill>` | Phase <n> | external (<installs>, <source repo>) | installed / declined |
 
-<Not installed, if any: `npx skills add <package>`>
+<Phases with no good skill match, if any: `Phase <n> — no skill found, proceeding without one`>
 
 ## 6. Model switches
 - **Now → Sonnet 5** (`claude-sonnet-5`) before Phase 1.

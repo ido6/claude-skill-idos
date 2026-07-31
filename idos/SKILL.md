@@ -43,16 +43,18 @@ Cover, as relevant:
 
 Keep going until a competent stranger could build the right thing from the plan alone. Never guess on anything that changes the outcome.
 
-## Step 2 — Map the skills
+## Step 2 — Map and source the skills
 
-Survey the session's available skills; use `find-skills` for anything not installed. Pick only what the task genuinely benefits from — no padding.
+Go phase by phase (using the phase list you're about to lock in Step 3, or a rough mental pass if phases aren't final yet). For each phase, find the best skill coverage — installed first, external second. Do this for every phase, not just the ones that feel skill-shaped; a phase with no good skill is still worth one search before you conclude that.
 
-For each skill, record **which phase it fires in and why**:
-- `python-testing` → test-writing phase, to hit the coverage bar.
-- `security-review` → before any auth/input-handling code, and again before commit.
-- `frontend-design` → UI-build phase, to avoid template-looking output.
+1. **Check installed first.** Survey the session's available skills list. If one genuinely fits a phase, use it — no need to search further for that phase.
+2. **Search external for gaps.** For any phase without solid installed coverage, invoke `find-skills` (or run `npx skills find <query>` directly) with a query specific to that phase — e.g. "stripe webhook", not just "payments". Check skills.sh's leaderboard for well-known options first.
+3. **Verify before recommending.** Apply `find-skills`' quality bar: prefer 1K+ installs, be skeptical under 100; prefer reputable sources (`anthropics`, `vercel-labs`, and other well-known orgs); check the source repo isn't a ghost repo.
+4. **No hit is a valid outcome.** If nothing external clears the bar, say so for that phase and proceed without one — don't force a weak match in just to fill the slot.
 
-If a needed skill is not installed, say so and give the install line (`npx skills add ...`) rather than silently skipping it.
+Only include skills the task genuinely benefits from — no padding for coverage's sake.
+
+For each skill you land on, record: **which phase**, **why**, and **source** — `installed` or `external: <owner/repo@skill>`. External skills are not installed yet at this point; that happens in Step 4, after Ido approves the list.
 
 ## Step 3 — Write the plan to a file
 
@@ -62,7 +64,16 @@ Match depth to the task. A plan longer than the work it describes is its own pro
 
 ## Step 4 — Approval gate
 
-Show Ido the plan (or a tight summary of it plus the file path) and ask for approval. Apply any edits he asks for and rewrite the file. **Do not proceed to handoff until he approves.** Do not start building here — the planning model plans, Sonnet builds.
+Show Ido the plan (or a tight summary of it plus the file path), **and the external-skill install list from Step 2 as its own callout** — name, phase, install count/source, install command. Ask for approval on both. Apply any edits he asks for and rewrite the file. **Do not proceed until he approves.**
+
+On approval:
+- For each approved external skill, run `npx skills add <owner/repo@skill> -g -y`.
+- If an install fails or the package doesn't exist as named, say so plainly — don't paper over it — and continue with the rest.
+- Mark each skill in the plan's skill map as `installed` once done.
+
+If Ido declines an external skill, drop it from the plan's skill map and proceed without it — don't substitute a different one without asking.
+
+Do not start building here — the planning model plans, Sonnet builds.
 
 ## Step 5 — Handoff summary (mandatory, always last)
 
