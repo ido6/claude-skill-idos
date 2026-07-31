@@ -10,7 +10,15 @@ This skill is the planning half. It always ends with a written plan file, an app
 
 The task is whatever follows `/idos`. If nothing followed it, ask what to plan before doing anything else.
 
-## Step 0 — Confirm the planning model
+## Step 0 — Triage: is this worth planning?
+
+Run this test first, before anything else.
+
+**If the task touches a single file and has one obvious correct change — stop.** Say so in one line: *"This is a one-file change, `/idos` is overhead here — want me to just do it?"* Then wait. Planning a typo fix costs more than the fix.
+
+Everything below runs only if the task fails that test — more than one file, a real decision to make, or an unclear shape.
+
+## Step 0b — Confirm the planning model
 
 You already know which model you are — check that first, do not ask Ido.
 
@@ -26,39 +34,48 @@ Then:
 
 You cannot switch models yourself. Recommend and pause; never claim you switched.
 
-## Step 1 — Ask everything (no limit)
+## Step 1 — Read the ground, then ask everything
 
-Better questions now, better build later. There is **no cap** on questions.
+**Read first. Never ask Ido what the repo can tell you.**
+
+If the task touches existing code, orient before asking a single question: list the working directory, read the entry points and the files the task names, check `package.json` / `pyproject.toml` / equivalent for the real stack, skim the config and test setup, note the conventions actually in use. Use `Explore` for anything that needs a broad sweep. Questions about stack, structure, or existing style are answers you should already have.
+
+**Then ask everything that's left.** There is **no cap** on questions.
 
 Use `AskUserQuestion` for structured choices — **max 4 questions per call**, so run repeated rounds of up to 4 until nothing material is unresolved. Use plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed.
 
-Cover, as relevant:
+Cover what the repo can't answer:
 - **Goal & success** — what "done" looks like, and how it gets verified.
 - **Scope & non-goals** — explicitly in, explicitly out.
-- **Constraints** — stack, existing code, style, deadlines, must-use / must-avoid tools.
+- **Constraints** — deadlines, must-use / must-avoid tools, anything the code doesn't reveal.
 - **Inputs & data** — sources, formats, examples, edge cases.
 - **Audience & surface** — who uses it, on what (CLI, web, mobile, API).
 - **Quality bar** — tests, accessibility, performance, security expectations.
-- **Preferences** — design direction, terseness, immutability, anything Ido cares about.
+- **Preferences** — design direction, terseness, anything Ido cares about.
+
+If reading the repo contradicts something Ido said, raise it rather than silently picking one.
 
 Keep going until a competent stranger could build the right thing from the plan alone. Never guess on anything that changes the outcome.
 
+**Close Step 1 by sketching the phase list** — just the ordered phase names, no detail yet. Step 2 maps capabilities onto these phases, so they have to exist first.
+
 ## Step 2 — Map and source the capabilities
 
-Three kinds of capability can cover a phase: **skills** (knowledge/workflow), **connectors** (MCP servers — live access to an external service's data), and **plugins** (bundles of skills/commands/agents/MCP for a whole domain). Skills are the common case; check the other two only when the trigger below fires.
+Three kinds of capability can cover a phase: **skills** (knowledge/workflow), **connectors** (MCP servers — live access to an external service's data), and **plugins** (bundles of skills/commands/agents/MCP for a whole domain).
 
-### 2a — Skills (always)
+Walk the phase list from Step 1. Skills get checked for every phase; connectors and plugins only when their trigger fires.
 
-Go phase by phase (using the phase list you're about to lock in Step 3, or a rough mental pass if phases aren't final yet). For each phase, find the best skill coverage — installed first, external second. Do this for every phase, not just the ones that feel skill-shaped; a phase with no good skill is still worth one search before you conclude that.
+**One rule governs all three: never force a weak match in to fill a slot.** "Nothing good found for this phase" is a valid, honest outcome — record it and move on.
 
-1. **Check installed first.** Survey the session's available skills list. If one genuinely fits a phase, use it — no need to search further for that phase.
-2. **Search external for gaps.** For any phase without solid installed coverage, invoke `find-skills` (or run `npx skills find <query>` directly) with a query specific to that phase — e.g. "stripe webhook", not just "payments". Check skills.sh's leaderboard for well-known options first.
-3. **Verify before recommending.** Apply `find-skills`' quality bar: prefer 1K+ installs, be skeptical under 100; prefer reputable sources (`anthropics`, `vercel-labs`, and other well-known orgs); check the source repo isn't a ghost repo.
-4. **No hit is a valid outcome.** If nothing external clears the bar, say so for that phase and proceed without one — don't force a weak match in just to fill the slot.
+Nothing here gets installed yet. That happens in Step 4, after Ido approves.
 
-Only include skills the task genuinely benefits from — no padding for coverage's sake.
+### 2a — Skills (every phase)
 
-For each skill you land on, record: **which phase**, **why**, and **source** — `installed` or `external: <owner/repo@skill>`. External skills are not installed yet at this point; that happens in Step 4, after Ido approves the list.
+1. **Installed first.** Survey the session's skills list. A genuine fit ends the search for that phase.
+2. **Search the gaps.** Invoke `find-skills` (or `npx skills find <query>`) with a query specific to the phase — "stripe webhook", not "payments". Check the skills.sh leaderboard for well-known options first.
+3. **Verify before recommending.** Prefer 1K+ installs and reputable sources (`anthropics`, `vercel-labs`, and other known orgs); be skeptical under 100 installs or a ghost source repo.
+
+Record: phase, why, and source — `installed` or `external: <owner/repo@skill>`.
 
 ### 2b — Connectors (only if a phase needs live external data)
 
@@ -83,7 +100,13 @@ Record: which phase, why, install command, and token cost from `details`.
 
 ## Step 3 — Write the plan to a file
 
-Fill in `plan-template.md` (next to this file) and write the result to **`PLAN-<slug>.md`** in the working directory — `<slug>` being a short kebab-case name for the task. Never leave the plan as chat-only: the build session starts fresh and cannot see this conversation.
+Fill in `plan-template.md` (next to this file) and write the result to **`PLAN-<slug>.md`** — `<slug>` being a short kebab-case name for the task.
+
+- **Where:** the project directory the task is about, not wherever the session happens to have started. If those differ, write it next to the code.
+- **Already exists?** Read it first and ask whether to update it or start fresh. Never silently overwrite a plan.
+- **Record the absolute path.** Steps 4 and 5 both need it — a bare filename won't resolve if the build session starts in a different directory.
+
+Never leave the plan as chat-only: the build session starts fresh and cannot see this conversation.
 
 Match depth to the task. A plan longer than the work it describes is its own problem.
 
@@ -115,13 +138,16 @@ Do not start building here — the planning model plans, Sonnet builds.
 Once approved, end the turn with this block. It is not optional and never gets compressed away:
 
 ```
-PLAN READY — PLAN-<slug>.md
+PLAN READY — <absolute path to PLAN-<slug>.md>
 
 Model now:      <Opus 5 | Fable 5>  — planning (done)
 Switch to:      Sonnet 5  (/model → claude-sonnet-5)
 Switch when:    now, before implementation starts
-Then run:       read PLAN-<slug>.md and execute it
+Then run:       read <absolute path> and execute it
+Blocked on:     <unauthorized connectors + which phase stalls, or "nothing">
 ```
+
+Use the **absolute** path in both lines — the build session may start somewhere else entirely.
 
 If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), add one line per switch under `Switch when:` so Ido knows every model change up front — which model, at which phase, and why.
 
