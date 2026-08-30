@@ -7,7 +7,8 @@ Invoke with `/idos <task>`. It will:
 
 1. Confirm it's running on the right planning model (Opus 5 for ambiguous/architectural work,
    Fable 5 for well-scoped/creative work) — and tell you to switch if it isn't.
-2. Ask every clarifying question needed, in rounds, with no cap.
+2. Grill you in frontier rounds — a design tree of questions with a recommended answer on
+   each — hunting blind spots and unknown unknowns until the mission is fully understood.
 3. Map which installed skills the task needs and when each one fires.
 4. Write a full plan to `PLAN-<slug>.md` in your working directory.
 5. Get your approval on the plan.

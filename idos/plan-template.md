@@ -1,13 +1,13 @@
 # PLAN — <task name>
 
-**Planned on:** <Opus 5 | Fable 5> · **Build on:** Sonnet 5
-**Status:** approved
+**Date:** <YYYY-MM-DD> · **Planned on:** <Opus 5 | Fable 5> · **Build on:** Sonnet 5
+**Status:** draft ← flip to `approved` at the approval gate; `revised` if edited during the build
 
 ## 1. Objective
 <One paragraph: what gets built, and the definition of done.>
 
 ## 2. Assumptions & decisions
-<What the Q&A settled. One bullet per decision, so nothing gets re-litigated during the build.>
+<What the Q&A settled. One bullet per decision, so nothing gets re-litigated during the build. Append here as rounds complete — do not wait until the plan is final.>
 
 - **<topic>:** <decision>
 

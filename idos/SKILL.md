@@ -1,6 +1,6 @@
 ---
 name: idos
-description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), asks unlimited clarifying questions in rounds, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then hands off to Sonnet 5 for the build.
+description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), grills in frontier rounds for blind spots and unknown unknowns until the mission is fully understood, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then hands off to Sonnet 5 for the build.
 ---
 
 # idos — Plan First, Build Later
@@ -34,17 +34,24 @@ Then:
 
 You cannot switch models yourself. Recommend and pause; never claim you switched.
 
-## Step 1 — Read the ground, then ask everything
+## Step 1 — Read the ground, then grill for blind spots
 
-**Read first. Never ask Ido what the repo can tell you.**
+**Read first. Never ask Ido what the repo can tell you.** Finding *facts* is your job, never his — the *decisions* are his.
 
-If the task touches existing code, orient before asking a single question: list the working directory, read the entry points and the files the task names, check `package.json` / `pyproject.toml` / equivalent for the real stack, skim the config and test setup, note the conventions actually in use. Use `Explore` for anything that needs a broad sweep. Questions about stack, structure, or existing style are answers you should already have.
+If the task touches existing code, orient before asking a single question: list the working directory, read the entry points and the files the task names, check `package.json` / `pyproject.toml` / equivalent for the real stack, skim the config and test setup, note the conventions actually in use. Use your repo-exploration subagent (`Explore` in Claude Code, `explore` in opencode) for anything that needs a broad sweep. Questions about stack, structure, or existing style are answers you should already have. If mid-grilling a question turns out to need a fact from the environment, go look it up (or dispatch the subagent) instead of asking Ido — and don't block the round on it: only the questions downstream of that fact wait.
 
-**Then ask everything that's left.** There is **no cap** on questions.
+**Then grill.** The goal is not to collect requirements — it is to surface **blind spots and unknown unknowns** until the mission is fully understood by both of you. Assume the first framing of the task is incomplete; your job is to find what Ido hasn't thought to say.
 
-Use `AskUserQuestion` for structured choices — **max 4 questions per call**, so run repeated rounds of up to 4 until nothing material is unresolved. Use plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed.
+Map the interrogation as a **design tree**: every decision branches into the decisions that hang off it. Work the tree in **rounds**. The **frontier** is every question whose prerequisites are already settled — askable *now* without guessing at answers you haven't heard yet. Each round:
 
-Cover what the repo can't answer:
+1. Ask the whole frontier at once. There is **no cap** on questions or rounds.
+2. Attach your **recommended answer** to every question — never make Ido pick blind.
+3. Wait for his answers. A question whose answer depends on another question still open this round belongs to a *later* round, not this one.
+4. His answers reshape the tree: settled decisions push the frontier outward and unblock new questions. Recompute and go again.
+
+Use your harness's structured-question tool (`AskUserQuestion` in Claude Code, `question` in opencode) for structured choices — **max 4 questions per call**, recommended option listed first — and plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed.
+
+Start from the known unknowns the repo can't answer:
 - **Goal & success** — what "done" looks like, and how it gets verified.
 - **Scope & non-goals** — explicitly in, explicitly out.
 - **Constraints** — deadlines, must-use / must-avoid tools, anything the code doesn't reveal.
@@ -53,9 +60,16 @@ Cover what the repo can't answer:
 - **Quality bar** — tests, accessibility, performance, security expectations.
 - **Preferences** — design direction, terseness, anything Ido cares about.
 
-If reading the repo contradicts something Ido said, raise it rather than silently picking one.
+Then hunt the unknown unknowns — the questions Ido didn't know needed asking:
+- **Unstated assumptions** — what is the request silently taking for granted? Name each one and ask.
+- **Failure modes** — what would make this succeed technically and still fail the mission?
+- **Second-order effects** — what does this change break, complicate, or obligate later?
+- **The unsaid** — what did the request leave out that a domain expert would expect to hear?
+- **Contradictions** — repo vs. Ido, or Ido's own answers vs. each other: raise them, never silently pick one.
 
-Keep going until a competent stranger could build the right thing from the plan alone. Never guess on anything that changes the outcome.
+The grilling is done only when the **frontier is empty**: every branch of the tree visited, nothing left silently assumed, and a competent stranger could build the right thing from the plan alone. Confirm the shared understanding of the mission with Ido before moving on. Never guess on anything that changes the outcome.
+
+**Persist answers as they land.** Create the plan draft file as soon as the first answers settle (Step 3 finalizes it) and append each round of decisions to it immediately. A long Q&A thread is exactly what context compaction eats — and re-asking Ido questions he already answered wastes his time. The file remembers; the transcript may not.
 
 **Close Step 1 by sketching the phase list** — just the ordered phase names, no detail yet. Step 2 maps capabilities onto these phases, so they have to exist first.
 
@@ -73,7 +87,7 @@ Nothing here gets installed yet. That happens in Step 4, after Ido approves.
 
 1. **Installed first.** Survey the session's skills list. A genuine fit ends the search for that phase.
 2. **Search the gaps.** Invoke `find-skills` (or `npx skills find <query>`) with a query specific to the phase — "stripe webhook", not "payments". Check the skills.sh leaderboard for well-known options first.
-3. **Verify before recommending.** Prefer 1K+ installs and reputable sources (`anthropics`, `vercel-labs`, and other known orgs); be skeptical under 100 installs or a ghost source repo.
+3. **Verify before recommending.** Prefer 1K+ installs and reputable sources (`anthropics`, `vercel-labs`, and other known orgs); be skeptical under 100 installs or a ghost source repo. Popularity is not safety — **read the external SKILL.md before recommending it**: frontmatter plus a scan of any bundled scripts/commands for things you would refuse to run yourself (network exfil, credential access, destructive deletes). If the `skill-scout` skill is installed, run its vetting step instead of improvising one.
 
 Record: phase, why, and source — `installed` or `external: <owner/repo@skill>`.
 
@@ -82,7 +96,7 @@ Record: phase, why, and source — `installed` or `external: <owner/repo@skill>`
 **Trigger:** a phase has to read or write real data in an external service — Figma files, Linear/Jira issues, Notion pages, a Supabase/Postgres database, Slack, Vercel deployments, Sentry errors. If every phase is self-contained in the repo, skip this entirely.
 
 1. **Check what's already connected.** The session lists its MCP servers, including which are connected, still connecting, and which need authentication. An already-connected server needs nothing.
-2. **Search for gaps.** Load the registry tools via `ToolSearch` (`mcp__mcp-registry__search_mcp_registry`, `suggest_connectors`, `list_connectors`) and search for the service the phase needs.
+2. **Search for gaps.** If the session exposes connector-registry search tools (e.g. `mcp__mcp-registry__search_mcp_registry` via ToolSearch), use them to find the service the phase needs. Not every harness has these — otherwise search GitHub for `<service> mcp server`. Either way, record what you found: Ido does the actual connector install by hand (Step 4).
 3. **Record the auth reality.** Most connectors need OAuth or an API token. **You cannot authorize them** — the user does that in their claude.ai connector settings, or via `claude mcp add ...` / `/mcp` in an interactive session. Note per connector whether it's already authorized, needs auth, or needs installing from scratch.
 
 Record: which phase, why, and status — `connected` / `needs auth` / `not installed`.
@@ -90,6 +104,8 @@ Record: which phase, why, and status — `connected` / `needs auth` / `not insta
 ### 2c — Plugins (only if a phase wants a whole domain toolkit)
 
 **Trigger:** a phase would pull in several related skills/commands/agents at once, or a vendor ships an official plugin for exactly this stack. One skill's worth of need is a skill, not a plugin — don't reach for a plugin to solve a single problem.
+
+The commands below are Claude Code CLI (`claude plugin ...`). In another harness without plugin support, skip this section and mark the phase *manual plugin install*.
 
 - `claude plugin list` — what's already installed.
 - `claude plugin marketplace list` — configured marketplaces. Add one with `claude plugin marketplace add <github-repo-or-url>`.
@@ -121,7 +137,7 @@ Show Ido the plan (or a tight summary of it plus the file path), **and everythin
 Ask for approval on the plan and on each addition. Apply any edits he asks for and rewrite the file. **Do not proceed until he approves.**
 
 On approval:
-- **Skills** — run `npx skills add <owner/repo@skill> -g -y` for each approved one.
+- **Skills** — run `npx skills add <owner/repo@skill> -g -y` for each approved one. Confirm `npx` exists first (`Get-Command npx` / `command -v npx`); if it's missing, hand Ido the exact command instead of failing silently.
 - **Plugins** — run `claude plugin install <plugin>@<marketplace>` (adding the marketplace first if needed).
 - **Connectors** — **hand these to Ido, don't attempt them.** Give the exact step: claude.ai connector settings for claude.ai connectors, or `claude mcp add ...` / `/mcp` in an interactive session for the rest. OAuth cannot run from inside this session, so a connector is only ready when he says it is.
 
@@ -150,4 +166,10 @@ Blocked on:     <unauthorized connectors + which phase stalls, or "nothing">
 Use the **absolute** path in both lines — the build session may start somewhere else entirely.
 
 If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), add one line per switch under `Switch when:` so Ido knows every model change up front — which model, at which phase, and why.
+
+## When the build hits a wall
+
+The build session starts fresh and cannot ask you follow-up questions — the plan file is its only recovery surface. So tell Ido the recovery move in the handoff: if Sonnet stalls, gets blocked, or the plan proves wrong mid-build, **edit `PLAN-<slug>.md` directly** — mark what changed in section 2, flip `Status:` to `revised` — and continue. Re-running `/idos` is for when the shape of the work changes, not for small corrections; a plan that must be re-planned from scratch every time it meets reality is a plan that was written too rigidly.
+
+Note: this skill is the heavyweight path. For a lightweight think-then-handoff without planning rounds, capability sourcing, or approval gates, Ido has the separate `/planhandoff` skill — don't invoke both on the same task.
 
