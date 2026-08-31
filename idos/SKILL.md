@@ -153,6 +153,8 @@ Do not start building here — the planning model plans, Sonnet builds.
 
 **The switch must happen in a fresh context, never via a bare `/model` mid-session.** Prompt caches are per-model: switching models inside the same session re-sends the entire planning transcript — every grilling round, repo sweep, and skill search — as uncached input tokens on the build model's first request, and drags it along in every build turn after. The plan file already holds everything the build needs, so the transcript is pure waste.
 
+**Always `/clear`, never `/compact`, for this handoff.** Compacting pays extra tokens to summarize the transcript, then carries the summary — lossy, uncontrolled, and a duplicate of what the plan file records better — into every build request. Because Step 1 persists every decision to the plan file as rounds land, the transcript contains nothing the plan lacks by the time this step runs: clearing loses nothing, compacting pays to keep noise.
+
 Once approved, end the turn with this block. It is not optional and never gets compressed away:
 
 ```
