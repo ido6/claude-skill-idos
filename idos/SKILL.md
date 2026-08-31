@@ -151,21 +151,24 @@ Do not start building here — the planning model plans, Sonnet builds.
 
 ## Step 5 — Handoff summary (mandatory, always last)
 
+**The switch must happen in a fresh context, never via a bare `/model` mid-session.** Prompt caches are per-model: switching models inside the same session re-sends the entire planning transcript — every grilling round, repo sweep, and skill search — as uncached input tokens on the build model's first request, and drags it along in every build turn after. The plan file already holds everything the build needs, so the transcript is pure waste.
+
 Once approved, end the turn with this block. It is not optional and never gets compressed away:
 
 ```
 PLAN READY — <absolute path to PLAN-<slug>.md>
 
 Model now:      <Opus 5 | Fable 5>  — planning (done)
-Switch to:      Sonnet 5  (/model → claude-sonnet-5)
-Switch when:    now, before implementation starts
-Then run:       read <absolute path> and execute it
+Hand off to:    Sonnet 5 — in a FRESH context (plan file carries everything; the
+                transcript would only burn tokens)
+Option A:       /clear → /model → claude-sonnet-5 → then: read <absolute path> and execute it
+Option B:       new terminal: claude --model claude-sonnet-5 "read <absolute path> and execute it"
 Blocked on:     <unauthorized connectors + which phase stalls, or "nothing">
 ```
 
-Use the **absolute** path in both lines — the build session may start somewhere else entirely.
+Use the **absolute** path everywhere it appears — the build session starts with no memory of this one and may start in a different directory entirely.
 
-If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), add one line per switch under `Switch when:` so Ido knows every model change up front — which model, at which phase, and why.
+If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), add one line per switch to the block — which model, at which phase, and why — and note that each of those switches should also go through `/clear` + re-read of the plan file, since the plan (with its section 2 decisions and phase checkpoints) is the only state that survives.
 
 ## When the build hits a wall
 

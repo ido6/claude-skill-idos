@@ -12,7 +12,10 @@ Invoke with `/idos <task>`. It will:
 3. Map which installed skills the task needs and when each one fires.
 4. Write a full plan to `PLAN-<slug>.md` in your working directory.
 5. Get your approval on the plan.
-6. Hand off with an explicit block telling you which model to switch to and when.
+6. Hand off with an explicit block telling you to run the build on Sonnet 5 in a
+   fresh context (`/clear` + `/model`, or a new `claude --model claude-sonnet-5`
+   invocation) — switching models mid-session would re-send the whole planning
+   transcript as uncached input tokens, and the plan file already carries everything.
 
 ## Install
 
