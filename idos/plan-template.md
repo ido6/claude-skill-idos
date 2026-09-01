@@ -46,4 +46,8 @@
 
 ## 6. Build launch
 - **Build agent:** Sonnet 5 subagent (fresh context), launched by the planner at approval.
+- **Real gate:** <the command that proves the tree is good — e.g. `pnpm build`, not just `tsc`>
+- **Verification harness:** <how checkpoints get checked when the app can't be driven live — jsdom tests, isolated HTML stage, measurement — or "live app at <url>">
+- **Paid calls:** none | <which calls, how many, why>
+- **Ship:** commit only (default) | `ship.ps1` | push — <who does it; the builder never pushes>
 - <Any phase wanting a different model: which model, which phase, why — runs as its own subagent.>

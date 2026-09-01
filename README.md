@@ -16,6 +16,13 @@ Invoke with `/idos <task>`. It will:
    definition pins `model: sonnet`, which Claude Code honors regardless of Task-tool
    parameters (only the *main* conversation's model is user-switch-only). Fresh
    context, zero manual steps, no transcript carried over; the planner supervises.
+7. When the builder reports done, run `code-reviewer` on the diff, bounce CRITICAL/HIGH
+   findings back through the plan file, and close with a short `BUILD DONE` block:
+   built / verified / not verified / review / git state / open items.
+
+Built for Claude Code CLI. Opinionated about the owner's setup: the plan template asks
+for the project's real build gate, a verification harness, a paid-API-call budget, and a
+ship decision (the builder never pushes — on git-linked Vercel repos a push is a deploy).
 
 ## Install
 

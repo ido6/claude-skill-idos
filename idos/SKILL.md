@@ -1,6 +1,6 @@
 ---
 name: idos
-description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), grills in frontier rounds for blind spots and unknown unknowns until the mission is fully understood, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then launches the build as a fresh-context Sonnet 5 subagent and supervises it.
+description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5.1), grills in frontier rounds for blind spots and unknown unknowns until the mission is fully understood, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then launches the build as a fresh-context Sonnet 5 subagent and supervises it.
 ---
 
 # idos — Plan First, Build Later
@@ -24,7 +24,7 @@ You already know which model you are — check that first, do not ask Ido.
 
 Pick the model this task should be planned on:
 
-- **Fable 5** (`claude-fable-5`) — fast, sharp. Well-scoped work, creative/UI/content tasks, single-surface features, anything where the shape is already clear and the job is a crisp plan quickly.
+- **Fable 5.1** (`claude-fable-5-1`; Fable 5 `claude-fable-5` also fine) — fast, sharp, Ido's default. Well-scoped work, creative/UI/content tasks, single-surface features, anything where the shape is already clear and the job is a crisp plan quickly.
 - **Opus 5** (`claude-opus-5`) — deepest reasoning. Ambiguous, architectural, multi-system or high-risk work: many moving parts, unclear requirements, real trade-offs, security or data-integrity concerns.
 
 Then:
@@ -38,7 +38,12 @@ You cannot switch models yourself. Recommend and pause; never claim you switched
 
 **Read first. Never ask Ido what the repo can tell you.** Finding *facts* is your job, never his — the *decisions* are his.
 
-If the task touches existing code, orient before asking a single question: list the working directory, read the entry points and the files the task names, check `package.json` / `pyproject.toml` / equivalent for the real stack, skim the config and test setup, note the conventions actually in use. Use your repo-exploration subagent (`Explore` in Claude Code, `explore` in opencode) for anything that needs a broad sweep. Questions about stack, structure, or existing style are answers you should already have. If mid-grilling a question turns out to need a fact from the environment, go look it up (or dispatch the subagent) instead of asking Ido — and don't block the round on it: only the questions downstream of that fact wait.
+If the task touches existing code, orient before asking a single question: list the working directory, read the entry points and the files the task names, check `package.json` / `pyproject.toml` / equivalent for the real stack, skim the config and test setup, note the conventions actually in use. Use the `Explore` subagent for anything that needs a broad sweep. Questions about stack, structure, or existing style are answers you should already have. If mid-grilling a question turns out to need a fact from the environment, go look it up (or dispatch the subagent) instead of asking Ido — and don't block the round on it: only the questions downstream of that fact wait.
+
+**Ido's repos carry decisions already made — read those before asking anything twice:**
+- The project's `CLAUDE.md` gotchas and the auto-memory index for this project (`~/.claude/projects/<project-slug>/memory/MEMORY.md`). A rule recorded there is settled; cite it, don't re-ask it.
+- Existing `PLAN-*.md` files in the repo touching the same area. idoGen alone has 20+; their section 2 decisions still hold unless the code has moved on. Reuse, don't re-grill.
+- Git state: are you in a `.claude/worktrees/*` checkout or the main one, and does `git status` show foreign hunks from another session? Both change how the build must stage and where the plan lives.
 
 **Then grill.** The goal is not to collect requirements — it is to surface **blind spots and unknown unknowns** until the mission is fully understood by both of you. Assume the first framing of the task is incomplete; your job is to find what Ido hasn't thought to say.
 
@@ -51,7 +56,7 @@ Map the interrogation as a **design tree**: every decision branches into the dec
 
 **Keep every question short and plain.** One decision per question, one or two sentences, everyday words. If a question needs a paragraph of setup, the setup is your homework — do the reading, then ask the short version. Answer options and recommendations get one line each. A question Ido has to reread has already failed.
 
-Use your harness's structured-question tool (`AskUserQuestion` in Claude Code, `question` in opencode) for structured choices — **max 4 questions per call**, recommended option listed first — and plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed.
+Use `AskUserQuestion` for structured choices — **max 4 questions per call**, recommended option listed first — and plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed. Ido prefers defaults already decided: if he answers "you decide" or skips a question, take your recommended answer and record it in the plan as *assumed*, not *decided*.
 
 Start from the known unknowns the repo can't answer:
 - **Goal & success** — what "done" looks like, and how it gets verified.
@@ -59,7 +64,10 @@ Start from the known unknowns the repo can't answer:
 - **Constraints** — deadlines, must-use / must-avoid tools, anything the code doesn't reveal.
 - **Inputs & data** — sources, formats, examples, edge cases.
 - **Audience & surface** — who uses it, on what (CLI, web, mobile, API).
-- **Quality bar** — tests, accessibility, performance, security expectations.
+- **Quality bar** — tests, accessibility, performance, security expectations — and the project's **real gate** (on idoGen that is `pnpm build`; `tsc` clean has shipped broken code there five times).
+- **Language & direction** — Ido's client sites are Hebrew-first RTL; idoGen mixes Hebrew and English. Any UI phase must say which, and whether `dir`/bidi is in play.
+- **Paid calls** — will building or verifying spend real money (Gemini, WaveSpeed, fal, ElevenLabs, OpenAI)? Default is **no paid calls during the build**; if verification needs one, cap it explicitly.
+- **Delivery** — commit only, `ship.ps1`, or push? On git-linked Vercel repos (idoGen) **`git push` is a production deploy**. Default is commit-only; the builder never pushes.
 - **Preferences** — design direction, terseness, anything Ido cares about.
 
 Then hunt the unknown unknowns — the questions Ido didn't know needed asking:
@@ -71,7 +79,7 @@ Then hunt the unknown unknowns — the questions Ido didn't know needed asking:
 
 The grilling is done only when the **frontier is empty**: every branch of the tree visited, nothing left silently assumed, and a competent stranger could build the right thing from the plan alone. Confirm the shared understanding of the mission with Ido before moving on. Never guess on anything that changes the outcome.
 
-**Persist answers as they land.** Create the plan draft file as soon as the first answers settle (Step 3 finalizes it) and append each round of decisions to it immediately. A long Q&A thread is exactly what context compaction eats — and re-asking Ido questions he already answered wastes his time. The file remembers; the transcript may not.
+**Persist answers as they land.** Create the plan draft file as soon as the first answers settle (Step 3 finalizes it) and append each round of decisions to it immediately. A long Q&A thread is exactly what context compaction eats — and re-asking Ido questions he already answered wastes his time. The file remembers; the transcript may not. **If you find yourself mid-`/idos` after a compaction, read the draft first and resume from its `Status:` line — never restart the grilling.**
 
 **Close Step 1 by sketching the phase list** — just the ordered phase names, no detail yet. Step 2 maps capabilities onto these phases, so they have to exist first.
 
@@ -126,6 +134,8 @@ Fill in `plan-template.md` (next to this file) and write the result to **`PLAN-<
 
 Never leave the plan as chat-only: the build session starts fresh and cannot see this conversation.
 
+Write the plan in **normal prose, not caveman** — Sonnet reads it cold, and the caveman rule already exempts multi-step sequences. Chat stays caveman. If Ido stacked `/ponytail` (or any minimalism mode) onto this run, the plan obeys it: fewest phases, stdlib before dependencies, nothing speculative.
+
 Match depth to the task. A plan longer than the work it describes is its own problem.
 
 ## Step 4 — Approval gate
@@ -177,7 +187,22 @@ While the build runs you are the supervisor, not a spectator: relay its progress
 
 If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), launch that phase as its own subagent with that model override, plan file re-read included — the plan (section 2 decisions plus phase checkpoints) is the only state that crosses subagent boundaries.
 
-**Fallback — no subagent tool or no model override available:** hand Ido exactly one line, nothing else: new terminal → `claude --model claude-sonnet-5 "read <absolute path> and execute it"`.
+**When the builder reports done, review before you report.** Spawn the `code-reviewer` agent (`~/.claude/agents/code-reviewer.md`, Ido's ECC rule: every code change gets reviewed) on the build's diff — subagents cannot spawn subagents, so this is your job. CRITICAL or HIGH findings go back to the builder through the plan file; MEDIUM and below get listed, not fixed. Then close with:
+
+```
+BUILD DONE — <slug>
+
+Built:       <one line per phase, what changed>
+Verified:    <the real gate + each Verify checkpoint, pass/fail>
+Not verified: <anything the plan wanted checked that could not be — say why>
+Review:      <code-reviewer verdict; open MEDIUM/LOW items>
+Git:         <committed as <sha> | uncommitted | pushed — and which files>
+Open:        <blockers, deviations recorded in section 2, anything for Ido>
+```
+
+Short, honest, no padding. "Not verified" is never empty just because it reads better empty.
+
+**Fallback — the Agent tool is unavailable in this session:** hand Ido exactly one line, nothing else: new terminal → `claude --model claude-sonnet-5 "read <absolute path> and execute it"`.
 
 ## When the build hits a wall
 
