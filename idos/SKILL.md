@@ -1,12 +1,12 @@
 ---
 name: idos
-description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), grills in frontier rounds for blind spots and unknown unknowns until the mission is fully understood, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then hands off to Sonnet 5 for the build.
+description: Ido's plan-first prompting workflow. Invoked with /idos <task>, or when Ido says "make a plan for X", "plan this properly before building", "write me a prompt/plan for X", or asks for planning before implementation. Picks the best planning model (Opus 5 or Fable 5), grills in frontier rounds for blind spots and unknown unknowns until the mission is fully understood, discovers and installs the skills — plus any connectors or plugins — the task needs and when each fires, writes the plan to a file, gets approval, then launches the build as a fresh-context Sonnet 5 subagent and supervises it.
 ---
 
 # idos — Plan First, Build Later
 
 Two-model workflow: **plan** on the strongest reasoning model, **build** on Sonnet 5.
-This skill is the planning half. It always ends with a written plan file, an approval, and an explicit model-switch summary.
+This skill is the planning half. It always ends with a written plan file, an approval, and the build launched as a fresh-context Sonnet 5 subagent.
 
 The task is whatever follows `/idos`. If nothing followed it, ask what to plan before doing anything else.
 
@@ -151,32 +151,39 @@ If Ido declines something, drop it from the map and proceed without it — don't
 
 Do not start building here — the planning model plans, Sonnet builds.
 
-## Step 5 — Handoff summary (mandatory, always last)
+## Step 5 — Launch the build (mandatory, always last)
 
-**The switch must happen in a fresh context, never via a bare `/model` mid-session.** Prompt caches are per-model: switching models inside the same session re-sends the entire planning transcript — every grilling round, repo sweep, and skill search — as uncached input tokens on the build model's first request, and drags it along in every build turn after. The plan file already holds everything the build needs, so the transcript is pure waste.
+The planner never writes code — but it does launch the builder. On approval, spawn the build as a **subagent with the model overridden to Sonnet 5** (`model: "sonnet"` on the Agent/Task tool in Claude Code; the equivalent subagent mechanism elsewhere). A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — no `/clear`, no `/model`, no `/compact`, nothing for Ido to type. (A bare mid-session `/model` switch would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
 
-**Always `/clear`, never `/compact`, for this handoff.** Compacting pays extra tokens to summarize the transcript, then carries the summary — lossy, uncontrolled, and a duplicate of what the plan file records better — into every build request. Because Step 1 persists every decision to the plan file as rounds land, the transcript contains nothing the plan lacks by the time this step runs: clearing loses nothing, compacting pays to keep noise.
-
-Once approved, end the turn with this block. It is not optional and never gets compressed away:
+Spawn it **in the background** with a self-contained prompt:
 
 ```
-PLAN READY — <absolute path to PLAN-<slug>.md>
-
-Model now:      <Opus 5 | Fable 5>  — planning (done)
-Hand off to:    Sonnet 5 — in a FRESH context (plan file carries everything; the
-                transcript would only burn tokens)
-Option A:       /clear → /model → claude-sonnet-5 → then: read <absolute path> and execute it
-Option B:       new terminal: claude --model claude-sonnet-5 "read <absolute path> and execute it"
-Blocked on:     <unauthorized connectors + which phase stalls, or "nothing">
+Read <absolute path to PLAN-<slug>.md> and execute it phase by phase.
+Follow the capability map; run each phase's Verify checkpoint before moving on.
+If the plan proves wrong mid-build, edit the plan file — record what changed in
+section 2, flip Status: to revised — and continue.
+When done, report what was built and each phase's verification result.
 ```
 
-Use the **absolute** path everywhere it appears — the build session starts with no memory of this one and may start in a different directory entirely.
+Then end the turn with this block. It is not optional and never gets compressed away:
 
-If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), add one line per switch to the block — which model, at which phase, and why — and note that each of those switches should also go through `/clear` + re-read of the plan file, since the plan (with its section 2 decisions and phase checkpoints) is the only state that survives.
+```
+BUILD LAUNCHED — Sonnet 5 subagent, fresh context
+
+Plan:        <absolute path to PLAN-<slug>.md>
+Watching:    I'll report progress and the final verification summary here
+Blocked on:  <unauthorized connectors + which phase stalls, or "nothing">
+```
+
+While the build runs you are the supervisor, not a spectator: relay its progress, surface blockers, and take Ido's mid-build corrections. Corrections flow through the plan file — edit it, then pass the correction to the running agent, or relaunch a fresh subagent against the revised plan if the current one is too far gone. Still no code from you.
+
+If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), launch that phase as its own subagent with that model override, plan file re-read included — the plan (section 2 decisions plus phase checkpoints) is the only state that crosses subagent boundaries.
+
+**Fallback — no subagent tool or no model override available:** hand Ido exactly one line, nothing else: new terminal → `claude --model claude-sonnet-5 "read <absolute path> and execute it"`.
 
 ## When the build hits a wall
 
-The build session starts fresh and cannot ask you follow-up questions — the plan file is its only recovery surface. So tell Ido the recovery move in the handoff: if Sonnet stalls, gets blocked, or the plan proves wrong mid-build, **edit `PLAN-<slug>.md` directly** — mark what changed in section 2, flip `Status:` to `revised` — and continue. Re-running `/idos` is for when the shape of the work changes, not for small corrections; a plan that must be re-planned from scratch every time it meets reality is a plan that was written too rigidly.
+The build agent's only shared state with the planner is `PLAN-<slug>.md`. If it stalls, reports a blocker, or reality disagrees with the plan: fix the plan file — mark what changed in section 2, flip `Status:` to `revised` — and relaunch the subagent against it. Its report says where it stopped; the revised plan tells the next run what changed. Re-running `/idos` is for when the shape of the work changes, not for small corrections; a plan that must be re-planned from scratch every time it meets reality is a plan that was written too rigidly.
 
 Note: this skill is the heavyweight path. For a lightweight think-then-handoff without planning rounds, capability sourcing, or approval gates, Ido has the separate `/planhandoff` skill — don't invoke both on the same task.
 

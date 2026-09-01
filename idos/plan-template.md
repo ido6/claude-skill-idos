@@ -44,6 +44,6 @@
 
 **Blockers:** <Any connector still unauthorized, and which phase stalls on it. Delete this line if none.>
 
-## 6. Model switches
-- **Now → Sonnet 5** (`claude-sonnet-5`) before Phase 1.
-- <Any mid-build switch: which model, which phase, why.>
+## 6. Build launch
+- **Build agent:** Sonnet 5 subagent (fresh context), launched by the planner at approval.
+- <Any phase wanting a different model: which model, which phase, why — runs as its own subagent.>
