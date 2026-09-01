@@ -12,17 +12,23 @@ Invoke with `/idos <task>`. It will:
 3. Map which installed skills the task needs and when each one fires.
 4. Write a full plan to `PLAN-<slug>.md` in your working directory.
 5. Get your approval on the plan.
-6. Launch the build itself as a Sonnet 5 subagent in a fresh context — zero manual
-   steps, no transcript carried over (per-model prompt caches make a mid-session
-   `/model` switch re-send everything) — then supervise it and report progress.
+6. Launch the build itself via the bundled `idos-builder` subagent — its agent
+   definition pins `model: sonnet`, which Claude Code honors regardless of Task-tool
+   parameters (only the *main* conversation's model is user-switch-only). Fresh
+   context, zero manual steps, no transcript carried over; the planner supervises.
 
 ## Install
 
-Copy `idos/` into your Claude Code skills directory:
+Copy `idos/` into your Claude Code skills directory, and the build-agent definition
+into your agents directory:
 
 ```bash
 cp -r idos ~/.claude/skills/idos
+cp idos/idos-builder.md ~/.claude/agents/idos-builder.md
 ```
+
+(The skill self-heals the second step: if the agent definition is missing at build
+time, it copies it from the skill directory before spawning.)
 
 Or with the [Skills CLI](https://github.com/anthropics/skills):
 

@@ -153,22 +153,20 @@ Do not start building here — the planning model plans, Sonnet builds.
 
 ## Step 5 — Launch the build (mandatory, always last)
 
-The planner never writes code — but it does launch the builder. On approval, spawn the build as a **subagent with the model overridden to Sonnet 5** (`model: "sonnet"` on the Agent/Task tool in Claude Code; the equivalent subagent mechanism elsewhere). A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — no `/clear`, no `/model`, no `/compact`, nothing for Ido to type. (A bare mid-session `/model` switch would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
+The planner never writes code — but it does launch the builder. On approval, spawn the **`idos-builder`** subagent. Its definition lives at `~/.claude/agents/idos-builder.md` with `model: sonnet` in the frontmatter — Claude Code's model-resolution order honors the agent definition's model even when the Agent/Task tool exposes no per-invocation `model` parameter, so the Sonnet override is guaranteed. **If the definition is missing, copy `idos-builder.md` from this skill's directory to `~/.claude/agents/` first, then spawn.** (Only the user can switch the *main* conversation's model; subagent models are the sanctioned exception.)
 
-Spawn it **in the background** with a self-contained prompt:
+A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — no `/clear`, no `/model`, no `/compact`, nothing for Ido to type. (A bare mid-session `/model` switch would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
+
+Spawn it **in the background**. The agent definition already carries the execution rules, so the prompt is only the pointer:
 
 ```
-Read <absolute path to PLAN-<slug>.md> and execute it phase by phase.
-Follow the capability map; run each phase's Verify checkpoint before moving on.
-If the plan proves wrong mid-build, edit the plan file — record what changed in
-section 2, flip Status: to revised — and continue.
-When done, report what was built and each phase's verification result.
+Execute the plan at <absolute path to PLAN-<slug>.md>.
 ```
 
 Then end the turn with this block. It is not optional and never gets compressed away:
 
 ```
-BUILD LAUNCHED — Sonnet 5 subagent, fresh context
+BUILD LAUNCHED — idos-builder subagent (Sonnet 5), fresh context
 
 Plan:        <absolute path to PLAN-<slug>.md>
 Watching:    I'll report progress and the final verification summary here
