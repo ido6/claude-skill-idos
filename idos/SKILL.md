@@ -49,6 +49,8 @@ Map the interrogation as a **design tree**: every decision branches into the dec
 3. Wait for his answers. A question whose answer depends on another question still open this round belongs to a *later* round, not this one.
 4. His answers reshape the tree: settled decisions push the frontier outward and unblock new questions. Recompute and go again.
 
+**Keep every question short and plain.** One decision per question, one or two sentences, everyday words. If a question needs a paragraph of setup, the setup is your homework — do the reading, then ask the short version. Answer options and recommendations get one line each. A question Ido has to reread has already failed.
+
 Use your harness's structured-question tool (`AskUserQuestion` in Claude Code, `question` in opencode) for structured choices — **max 4 questions per call**, recommended option listed first — and plain text for open-ended things. Group related questions into the same round so Ido is not drip-fed.
 
 Start from the known unknowns the repo can't answer:
