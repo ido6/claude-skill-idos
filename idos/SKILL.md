@@ -180,6 +180,8 @@ BUILD LAUNCHED — idos-builder subagent (Sonnet 5), fresh context
 
 Plan:        <absolute path to PLAN-<slug>.md>
 Watching:    I'll report progress and the final verification summary here
+Keep open:   closing or stopping this chat kills the builder mid-run — the gate
+             (`pnpm build`) alone can take minutes. Wait for BUILD DONE.
 Blocked on:  <unauthorized connectors + which phase stalls, or "nothing">
 ```
 
@@ -206,7 +208,9 @@ Short, honest, no padding. "Not verified" is never empty just because it reads b
 
 ## When the build hits a wall
 
-The build agent's only shared state with the planner is `PLAN-<slug>.md`. If it stalls, reports a blocker, or reality disagrees with the plan: fix the plan file — mark what changed in section 2, flip `Status:` to `revised` — and relaunch the subagent against it. Its report says where it stopped; the revised plan tells the next run what changed. Re-running `/idos` is for when the shape of the work changes, not for small corrections; a plan that must be re-planned from scratch every time it meets reality is a plan that was written too rigidly.
+The build agent's only shared state with the planner is `PLAN-<slug>.md`. If it stalls, reports a blocker, or reality disagrees with the plan: fix the plan file — mark what changed in section 2, flip `Status:` to `revised` — and relaunch the subagent against it. Its report says where it stopped; the revised plan tells the next run what changed.
+
+**If the builder was killed** (chat closed, session stopped, no BUILD DONE ever arrived): nothing is lost — its edits are on disk and the plan's `Progress:` line says which phases finished. Relaunch `idos-builder` with `Resume the plan at <absolute path> from its Progress line.` It verifies the finished phases against the working tree and continues; it does not redo them. Re-running `/idos` is for when the shape of the work changes, not for small corrections; a plan that must be re-planned from scratch every time it meets reality is a plan that was written too rigidly.
 
 Note: this skill is the heavyweight path. For a lightweight think-then-handoff without planning rounds, capability sourcing, or approval gates, Ido has the separate `/planhandoff` skill — don't invoke both on the same task.
 

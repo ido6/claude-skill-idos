@@ -2,6 +2,7 @@
 
 **Date:** <YYYY-MM-DD> · **Planned on:** <Opus 5 | Fable 5> · **Build on:** Sonnet 5
 **Status:** draft ← flip to `approved` at the approval gate; `revised` if edited during the build
+**Progress:** not started ← the builder rewrites this after every phase (`Phase 2 done 14:03 — tests green`) so a killed run resumes instead of restarting
 
 ## 1. Objective
 <One paragraph: what gets built, and the definition of done.>
@@ -16,7 +17,7 @@
 ### Phase 1 — <name>
 - **Do:** <what happens>
 - **Files/areas:** <paths or surfaces touched>
-- **Skills:** <skill name> — <why, at this point>
+- **Skills (load with the Skill tool before the first edit):** <skill name> — <why, at this point>
 - **Verify:** <concrete checkpoint proving the phase worked>
 
 ### Phase 2 — <name>

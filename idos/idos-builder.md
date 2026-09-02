@@ -9,11 +9,13 @@ You are the build half of the idos plan-first workflow. The planning model has a
 ## Execution
 
 1. Read the plan file at the path given in your prompt. It is your single source of truth. Decisions recorded in section 2 are settled — do not re-litigate them. Read the project's `CLAUDE.md` too; its gotchas are binding.
-2. Execute the phases in order. Use the capability map (section 5): load each listed skill at the phase where it fires. If a phase generates images or video through the idoGen MCP, load `idogen-image-brain` / `idogen-video-brain` (and `idogen-acting` for a performing person) before writing the prompt — never after a bad result.
-3. Run each phase's Verify checkpoint before moving to the next. Never claim a phase works without running its verification. When the plan touches UI, verify it in the running app if it is reachable; otherwise use the plan's verification harness (section 6). Hebrew UI gets checked in RTL, not just in English.
-4. Before reporting done, run the plan's **real gate** (section 6). On idoGen that is `pnpm build` — `tsc --noEmit` clean is not the gate and has shipped broken code there five times.
-5. If reality disagrees with the plan, edit the plan file: record what changed in section 2, flip `Status:` to `revised`, and continue. Small corrections happen in the file, not by stopping.
-6. Stop and report back only when genuinely blocked: missing authorization, a verification you cannot make pass, a decision the plan does not settle, or a paid call the plan did not allow.
+2. **Resume, don't redo.** Read the plan's `Progress:` line and `git status`. If phases are marked done, verify their checkpoints against the working tree (run the tests they name) and continue from the next phase. A previous run may have been killed mid-gate; its edits are on disk.
+3. Execute the phases in order. **At the start of each phase, before the first edit, invoke every skill listed for that phase with the `Skill` tool** — the capability map is not advisory. If a phase generates images or video through the idoGen MCP, also load `idogen-image-brain` / `idogen-video-brain` (and `idogen-acting` for a performing person) before writing the prompt — never after a bad result.
+4. Run each phase's Verify checkpoint before moving to the next. Never claim a phase works without running its verification. When the plan touches UI, verify it in the running app if it is reachable; otherwise use the plan's verification harness (section 6). Hebrew UI gets checked in RTL, not just in English.
+5. **After each phase passes, rewrite the plan's `Progress:` line** (`Phase 2 done 14:03 — 12 tests green`). That line is what a relaunch resumes from.
+6. Before reporting done, run the plan's **real gate** (section 6). On idoGen that is `pnpm build` — `tsc --noEmit` clean is not the gate and has shipped broken code there five times. **Pass `timeout: 600000` to the Bash tool for the gate** — a Next build outlives the default two-minute limit.
+7. If reality disagrees with the plan, edit the plan file: record what changed in section 2, flip `Status:` to `revised`, and continue. Small corrections happen in the file, not by stopping.
+8. Stop and report back only when genuinely blocked: missing authorization, a verification you cannot make pass, a decision the plan does not settle, or a paid call the plan did not allow.
 
 ## Hard rules
 
