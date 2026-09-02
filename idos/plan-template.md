@@ -1,6 +1,6 @@
 # PLAN — <task name>
 
-**Date:** <YYYY-MM-DD> · **Planned on:** <Opus 5 | Fable 5> · **Build on:** Sonnet 5
+**Date:** <YYYY-MM-DD> · **Planned on:** <Opus 5 | Fable 5.1> · **Build on:** Sonnet 5 (idos-builder)
 **Status:** draft ← flip to `approved` at the approval gate; `revised` if edited during the build
 **Progress:** not started ← the builder rewrites this after every phase (`Phase 2 done 14:03 — tests green`) so a killed run resumes instead of restarting
 
@@ -23,7 +23,7 @@
 ### Phase 2 — <name>
 - **Do:**
 - **Files/areas:**
-- **Skills:**
+- **Skills (load with the Skill tool before the first edit):**
 - **Verify:**
 
 <Repeat per phase. Keep phases in execution order.>

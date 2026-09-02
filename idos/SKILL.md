@@ -106,7 +106,7 @@ Record: phase, why, and source — `installed` or `external: <owner/repo@skill>`
 **Trigger:** a phase has to read or write real data in an external service — Figma files, Linear/Jira issues, Notion pages, a Supabase/Postgres database, Slack, Vercel deployments, Sentry errors. If every phase is self-contained in the repo, skip this entirely.
 
 1. **Check what's already connected.** The session lists its MCP servers, including which are connected, still connecting, and which need authentication. An already-connected server needs nothing.
-2. **Search for gaps.** If the session exposes connector-registry search tools (e.g. `mcp__mcp-registry__search_mcp_registry` via ToolSearch), use them to find the service the phase needs. Not every harness has these — otherwise search GitHub for `<service> mcp server`. Either way, record what you found: Ido does the actual connector install by hand (Step 4).
+2. **Search for gaps.** If the session exposes connector-registry search tools (`mcp__mcp-registry__search_mcp_registry` via ToolSearch), use them to find the service the phase needs; otherwise search GitHub for `<service> mcp server`. Either way, record what you found: Ido does the actual connector install by hand (Step 4).
 3. **Record the auth reality.** Most connectors need OAuth or an API token. **You cannot authorize them** — the user does that in their claude.ai connector settings, or via `claude mcp add ...` / `/mcp` in an interactive session. Note per connector whether it's already authorized, needs auth, or needs installing from scratch.
 
 Record: which phase, why, and status — `connected` / `needs auth` / `not installed`.
@@ -114,8 +114,6 @@ Record: which phase, why, and status — `connected` / `needs auth` / `not insta
 ### 2c — Plugins (only if a phase wants a whole domain toolkit)
 
 **Trigger:** a phase would pull in several related skills/commands/agents at once, or a vendor ships an official plugin for exactly this stack. One skill's worth of need is a skill, not a plugin — don't reach for a plugin to solve a single problem.
-
-The commands below are Claude Code CLI (`claude plugin ...`). In another harness without plugin support, skip this section and mark the phase *manual plugin install*.
 
 - `claude plugin list` — what's already installed.
 - `claude plugin marketplace list` — configured marketplaces. Add one with `claude plugin marketplace add <github-repo-or-url>`.
@@ -167,25 +165,25 @@ The planner never writes code — but it does launch the builder. On approval, s
 
 A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — no `/clear`, no `/model`, no `/compact`, nothing for Ido to type. (A bare mid-session `/model` switch would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
 
-Spawn it **in the background**. The agent definition already carries the execution rules, so the prompt is only the pointer:
-
-```
-Execute the plan at <absolute path to PLAN-<slug>.md>.
-```
-
-Then end the turn with this block. It is not optional and never gets compressed away:
+First print this block, so Ido knows what is about to happen and that the turn will stay busy:
 
 ```
 BUILD LAUNCHED — idos-builder subagent (Sonnet 5), fresh context
 
 Plan:        <absolute path to PLAN-<slug>.md>
-Watching:    I'll report progress and the final verification summary here
-Keep open:   closing or stopping this chat kills the builder mid-run — the gate
-             (`pnpm build`) alone can take minutes. Wait for BUILD DONE.
+Running:     in the foreground — this turn stays busy until BUILD DONE.
+             Do not close or stop the chat; Esc kills the builder mid-run.
+             The gate (`pnpm build`) alone can take minutes.
 Blocked on:  <unauthorized connectors + which phase stalls, or "nothing">
 ```
 
-While the build runs you are the supervisor, not a spectator: relay its progress, surface blockers, and take Ido's mid-build corrections. Corrections flow through the plan file — edit it, then pass the correction to the running agent, or relaunch a fresh subagent against the revised plan if the current one is too far gone. Still no code from you.
+Then spawn it **in the foreground** (`run_in_background: false`). Your very next action depends on its result and nothing useful happens meanwhile — and a background spawn ends your turn, leaves an idle prompt that looks finished, and invites Ido to close the chat, which kills the builder (that is exactly how the first real run died at the `pnpm build` gate). The agent definition already carries the execution rules, so the prompt is only the pointer:
+
+```
+Execute the plan at <absolute path to PLAN-<slug>.md>.
+```
+
+You are the supervisor, not the builder: when the subagent returns, read its report against the plan, surface blockers, and push corrections through the plan file — edit it, then relaunch against the revised plan. Still no code from you.
 
 If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), launch that phase as its own subagent with that model override, plan file re-read included — the plan (section 2 decisions plus phase checkpoints) is the only state that crosses subagent boundaries.
 
