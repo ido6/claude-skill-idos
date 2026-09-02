@@ -28,11 +28,10 @@ Pick the model this task should be planned on:
 - **Opus 5** (`claude-opus-5`) — deepest reasoning. Ambiguous, architectural, multi-system or high-risk work: many moving parts, unclear requirements, real trade-offs, security or data-integrity concerns.
 
 Then:
-- **You are already the right one** → say so in one line and continue.
-- **You are the other one of the two** → say which one fits better and why, and ask whether to switch or continue anyway. If Ido says continue, continue — do not stall.
-- **You are neither (e.g. Sonnet)** → stop. Tell Ido to switch with `/model` to the recommended one and re-run `/idos`. Sonnet is the build model, not the planning model.
+- **You are Fable 5.1 or Opus 5** → say which in one line and continue. If the other would fit better, say so in that same line — Ido can restart on it from his model picker if he wants. Do not stall waiting for a switch.
+- **You are Sonnet (or smaller)** → say so once, warn that the plan will be shallower, and continue anyway. Sonnet is the build model, not the planning model — but a Sonnet plan beats no plan, and a mid-session switch may not be possible.
 
-You cannot switch models yourself. Recommend and pause; never claim you switched.
+You cannot switch models yourself, and nothing in this skill depends on one. Never tell Ido to run `/model` or any slash command; never claim you switched.
 
 ## Step 1 — Read the ground, then grill for blind spots
 
@@ -163,7 +162,7 @@ Do not start building here — the planning model plans, Sonnet builds.
 
 The planner never writes code — but it does launch the builder. On approval, spawn the **`idos-builder`** subagent. Its definition lives at `~/.claude/agents/idos-builder.md` with `model: sonnet` in the frontmatter — Claude Code's model-resolution order honors the agent definition's model even when the Agent/Task tool exposes no per-invocation `model` parameter, so the Sonnet override is guaranteed. **If the definition is missing, copy `idos-builder.md` from this skill's directory to `~/.claude/agents/` first, then spawn.** (Only the user can switch the *main* conversation's model; subagent models are the sanctioned exception.)
 
-A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — no `/clear`, no `/model`, no `/compact`, nothing for Ido to type. (A bare mid-session `/model` switch would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
+A subagent starts with a **fresh context by construction**: it sees only its prompt, not the planning transcript. That kills the token waste automatically — nothing for Ido to type, no slash command, no model switch in the main conversation. (Only Ido could switch that model, and doing so mid-session would re-send the whole transcript as uncached input on the new model, since prompt caches are per-model; the plan file already carries everything the build needs.)
 
 First print this block, so Ido knows what is about to happen and that the turn will stay busy:
 
