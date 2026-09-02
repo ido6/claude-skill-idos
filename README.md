@@ -15,8 +15,8 @@ Invoke with `/idos <task>`. It will:
    auto-memory, prior `PLAN-*.md` files in the same area, git state (worktree? foreign
    hunks?). Facts are its job; decisions are yours.
 4. **Grill for blind spots.** A design tree worked in frontier rounds: every askable
-   question at once, a recommended answer on each, short and plain (one decision, one
-   or two sentences). It hunts unstated assumptions, failure modes, second-order
+   question at once, a recommended answer on each, super-caveman (≤ 10 words, one
+   decision, options ≤ 4 words). It hunts unstated assumptions, failure modes, second-order
    effects and contradictions until nothing is silently assumed. Answers are persisted
    to the plan draft as they land, so compaction cannot eat them.
 5. **Map capabilities.** Installed skills first, then skills.sh for gaps (vetted before
