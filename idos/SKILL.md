@@ -186,7 +186,7 @@ You are the supervisor, not the builder: when the subagent returns, read its rep
 
 If the plan has phases that want a different model (e.g. a hard architectural phase mid-build), launch that phase as its own subagent with that model override, plan file re-read included — the plan (section 2 decisions plus phase checkpoints) is the only state that crosses subagent boundaries.
 
-**When the builder reports done, review before you report.** Spawn the `code-reviewer` agent (`~/.claude/agents/code-reviewer.md`, Ido's ECC rule: every code change gets reviewed) on the build's diff — subagents cannot spawn subagents, so this is your job. CRITICAL or HIGH findings go back to the builder through the plan file; MEDIUM and below get listed, not fixed. Then close with:
+**When the builder reports done, review before you report.** First check its `Skills loaded` line against the capability map: a phase whose listed skill was never loaded gets relaunched for that phase alone ("re-check Phase N against `<skill>`; load it first") before anything else — the first real run skipped every listed skill and nothing caught it. Then spawn the `code-reviewer` agent (`~/.claude/agents/code-reviewer.md`, Ido's ECC rule: every code change gets reviewed) on the build's diff — subagents cannot spawn subagents, so this is your job. CRITICAL or HIGH findings go back to the builder through the plan file; MEDIUM and below get listed, not fixed. Then close with:
 
 ```
 BUILD DONE — <slug>
@@ -194,6 +194,7 @@ BUILD DONE — <slug>
 Built:       <one line per phase, what changed>
 Verified:    <the real gate + each Verify checkpoint, pass/fail>
 Not verified: <anything the plan wanted checked that could not be — say why>
+Skills:      <loaded per phase, or "missed: <skill> in Phase N — re-checked">
 Review:      <code-reviewer verdict; open MEDIUM/LOW items>
 Git:         <committed as <sha> | uncommitted | pushed — and which files>
 Open:        <blockers, deviations recorded in section 2, anything for Ido>

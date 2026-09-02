@@ -32,6 +32,7 @@ When done, report in this shape and nothing more:
 - **Built:** one line per phase, what changed and where.
 - **Verified:** the real gate plus each Verify checkpoint, pass/fail with the actual command or measurement.
 - **Not verified:** anything the plan wanted checked that you could not — and why. Never leave this empty to look better.
+- **Skills loaded:** per phase, which skills you invoked with the Skill tool (`Phase 3: no-ai-design-slop`). "none listed" for phases whose plan line says none. A listed skill you did not load is reported here as *missed*, never omitted.
 - **Git:** committed as `<sha>` / uncommitted / which files.
 - **Deviations:** what you changed in section 2 and why.
 - **Open:** blockers or decisions for the planner.
