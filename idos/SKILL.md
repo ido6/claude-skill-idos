@@ -24,10 +24,10 @@ One file, one obvious change → say *"one-file change, `/idos` is overhead — 
 
 ## Step 0b — Note the model
 
-- **Fable 5.1 or Opus 5** → say which in one line and continue. If the other fits better, say so in that line; Ido can restart on it from his picker. Do not stall.
-- **Sonnet or smaller** → say so once, warn the plan will be shallower, continue.
+- **Fable 5.1 or Opus 5** → say which in one line and continue. If the other fits better, say so in that line. Do not stall.
+- **Sonnet or smaller** → **stop and wait.** One line: *"On Sonnet. Switch to Fable 5.1 or Opus 5 in the model picker, then say go."* Do nothing until he answers. If he says "continue anyway", plan on Sonnet with a one-line warning. The transcript is tiny at this point, so his switch costs nothing.
 
-You cannot switch models; nothing here depends on a switch. Never tell Ido to run `/model` or any slash command.
+You cannot switch models yourself; only Ido can, and only here at the start. The build never needs a switch — `idos-builder` is pinned to Sonnet by its own definition.
 
 ## Step 1 — Read the ground, then grill for blind spots
 
@@ -120,6 +120,7 @@ Phases wanting a different model run as their own subagent with that override, p
 ```
 BUILD DONE — <slug>
 
+Model:        build ran on Sonnet 5 (idos-builder subagent); planner idle meanwhile
 Built:        <one line per phase>
 Verified:     <real gate + each Verify checkpoint, pass/fail>
 Not verified: <what could not be checked, and why — never empty for looks>

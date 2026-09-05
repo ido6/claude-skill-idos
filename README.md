@@ -9,8 +9,8 @@ Invoke with `/idos <task>`. It will:
 
 1. **Triage.** A one-file, one-obvious-change task gets "this is overhead, want me to
    just do it?" — planning a typo fix costs more than the fix.
-2. **Note the model.** Fable 5.1 / Opus 5 continue; Sonnet warns the plan will be
-   shallower and continues anyway. It never asks you to switch.
+2. **Note the model.** Fable 5.1 / Opus 5 continue; on Sonnet it stops and waits for you
+   to switch in the picker (or say "continue anyway"). The build never needs a switch.
 3. **Read the ground.** Repo, entry points, stack, project `CLAUDE.md` gotchas,
    auto-memory, prior `PLAN-*.md` files in the same area, git state (worktree? foreign
    hunks?). Facts are its job; decisions are yours.
