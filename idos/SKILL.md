@@ -1,143 +1,94 @@
 ---
 name: idos
-description: Ido's plan-first workflow. /idos <task>, or "make a plan for X" / "plan this before building". Grills for blind spots in short rounds, sources skills/connectors, writes PLAN-<slug>.md, gets approval, then runs the build as the idos-builder Sonnet subagent and supervises it.
+description: Plan before building. Uncover blind spots with short questions, suggest suitable models, persist decisions, and execute after approval. Use for /idos, $idos, or planning-before-implementation requests.
 ---
 
 # idos — Plan First, Build Later
 
-Plan on the model this chat runs (Fable 5.1 or Opus 5); build on Sonnet 5 via the `idos-builder` subagent. This skill is the planning half. It ends with a plan file, an approval, a launched build, and a `BUILD DONE` report.
+Model- and provider-neutral. Fable 5.1 and GPT Astra are Ido's choices when available, not mandatory models or interchangeable API IDs. Use the current host's tools. Recommendations never authorize switching or building.
 
-The task is whatever follows `/idos`. If nothing followed it, ask what to plan.
+## 1. Orient and suggest models
 
-## Token discipline (applies to every step)
+Use the task in the invocation or preceding request; a trailing /idos still refers to that request. Ask what to plan only when no task exists. Small changes get short plans, not extra triage permission rounds.
 
-Every byte pulled into this context is re-read on every later turn, and a planning run is 50–80 turns. So:
+Read exposed current host/model information. If unavailable, say unknown; never infer model identity from branding or old messages. Use advertised model names/IDs and supported controls. Do not scan credentials or whole configuration files.
 
-- **Read the repo through the `Explore` subagent**, one call with a precise brief, one report back. Never `cat` whole files into this context. Read a file here only if you will quote it in the plan — and then only the lines you need.
-- **Batch independent lookups into one tool call.** Ten sequential one-liners cost ten turns of context.
-- The project `CLAUDE.md` is already in context. Do not read it again.
-- **Everything you say to Ido is super-caveman.** Status lines ≤ 1 line. Explanations ≤ 3 fragment lines. No "plan in one breath" paragraphs, no recaps, no rationale. The plan file is the only place for normal prose.
+Briefly show:
+- Planning: <available model> — <task-specific reason>.
+- Implementation: <available model; same model allowed> — <reason>.
+- Current: <observed model or unknown>; recommendations only.
 
-## Step 0 — Triage
+Consider Fable 5.1 and GPT Astra when available. Prefer reasoning capacity for uncertain architecture and a capable economical coding model for settled work. Do not rank families categorically or promise free switching/savings. Respect the user's chosen model.
 
-One file, one obvious change → say *"one-file change, `/idos` is overhead — want me to just do it?"* and wait. Otherwise continue.
+Continue planning on the current model unless Ido requests a switch or pause; then stop dependent work until confirmation. At approval record the accepted build model and execution method. Never silently implement on a different model.
 
-## Step 0b — Note the model
+## 2. Read narrowly, ask clearly
 
-- **Fable 5.1 or Opus 5** → say which in one line and continue. If the other fits better, say so in that line. Do not stall.
-- **Sonnet or smaller** → **stop and wait.** One line: *"On Sonnet. Switch to Fable 5.1 or Opus 5 in the model picker, then say go."* Do nothing until he answers. If he says "continue anyway", plan on Sonnet with a one-line warning. The transcript is tiny at this point, so his switch costs nothing.
+Read relevant project instructions (CLAUDE.md / AGENTS.md), task files, applicable memory, prior plan decisions and git/worktree state. Reuse loaded instructions; read missing relevant sections only. Do not inspect unrelated chats or projects.
 
-You cannot switch models yourself; only Ido can, and only here at the start. The build never needs a switch — `idos-builder` is pinned to Sonnet by its own definition.
+- Prefer targeted search and bounded reads. Delegate broad exploration only when useful; request concise findings with paths and evidence. Small lookups need no agent.
+- Batch independent reads. Avoid whole-file dumps, repeated inventories and automatic agent launches.
+- Do not infer token costs from transcript size or sum duplicate streaming usage records.
+- Facts are your job; ask Ido for choices the environment cannot settle.
 
-## Step 1 — Read the ground, then grill for blind spots
+Questions: short, plain, one decision each. Aim for about 10 words and 4-word options; clarity wins over hard caps. Recommended option first, brief reason when useful. Use available structured-question tools within their actual limits, or concise plain text.
 
-**Facts are your job; decisions are Ido's. Never ask what the repo can tell you.**
+Work in dependency-ordered rounds: ask only questions whose prerequisites are settled, then uncover downstream decisions. Hunt unstated assumptions, contradictions, hidden dependencies and outcomes that pass tests but fail the mission. No fixed checklist, question quota or endless search for every imaginable risk.
 
-Before the first question, via `Explore`: entry points and the files the task names, real stack (`package.json` etc.), test setup, conventions. Plus, already-settled decisions you must cite instead of re-asking:
-- the auto-memory index (`~/.claude/projects/<project-slug>/memory/MEMORY.md`) and the `CLAUDE.md` gotchas already in context;
-- existing `PLAN-*.md` in the repo for the same area — grep for the area, read section 2 of the hits only;
-- git state: worktree or main checkout, foreign hunks from another session.
+Relevant probes: success, scope, mobile/RTL, design preservation, real verification gate, live access, paid calls and delivery. Derive project-specific commands and constraints from current evidence.
 
-If a question mid-grilling needs a fact, look it up (or send `Explore`) — don't ask Ido, and don't block the round; only downstream questions wait.
+"You decide" authorizes your recommendation; record it. Skipped/unanswered questions are not approval. Leave consequential choices pending; low-impact defaults require explicit assumptions. Do not re-ask settled answers or existing permissions.
 
-**Then grill.** The goal is blind spots and unknown unknowns, not a requirements list. Assume the first framing is incomplete.
+## 3. Persist plan and capabilities
 
-Work a **design tree in frontier rounds**: each round asks every question whose prerequisites are settled, with your recommended answer on each; wait; recompute the frontier from the answers; repeat. No cap on rounds. A question that depends on another still open this round waits for the next.
+Use [plan-template.md](plan-template.md) for PLAN-<slug>.md in the task's working directory. Keep depth proportional. Update the matching task plan; never overwrite an unrelated plan.
 
-**Super-caveman questions — hard caps:** question ≤ 10 words, one decision. Header 1–2 words. Options ≤ 4 words; option description ≤ 8 words or none. Recommended option first, tagged `(Recommended)`, nothing more. Example: *"Grid tap → open expanded view?"* with *Yes, everywhere (Recommended) / Phone only / Keep as is*. Setup a question would need is your homework, not question text. Use `AskUserQuestion` (max 4 per call) for choices; plain text only for truly open-ended, and even then one short line. "You decide" or a skipped question → take the recommendation, record it as *assumed*.
+Create a draft as decisions settle, append each round's answers. Record exact workspace, branch if applicable, progress and verification evidence. A plan is durable context, not proof that code/checks match it.
 
-Known unknowns to start from:
-- **Goal & success** — what done looks like, how it is verified.
-- **Scope & non-goals.**
-- **Constraints** — deadlines, must-use / must-avoid tools.
-- **Inputs & data** — sources, formats, edge cases.
-- **Audience & surface.**
-- **Quality bar + real gate** — tests, a11y, perf, security; on idoGen the gate is `pnpm build`, not `tsc`.
-- **Language & direction** — Hebrew-first RTL client sites; idoGen mixes Hebrew and English. Any UI phase says which.
-- **Paid calls** — Gemini, WaveSpeed, fal, ElevenLabs, OpenAI. Default: none during the build; cap any exception.
-- **Delivery** — commit only (default), `ship.ps1`, or push. On git-linked Vercel repos push = production deploy. The builder never pushes.
-- **Preferences** — design direction, terseness.
+Map only useful capabilities to phases. Reuse installed skills and connected tools first. Search externally only for a concrete missing capability; no mandatory marketplace sweep. Inspect external instructions and executable content before recommending. Popularity is not proof of safety. Install authorized additions using supported tools; do not invent CLI flags, token estimates or auth status.
 
-Unknown unknowns to hunt: unstated assumptions (name each), failure modes that pass technically and fail the mission, second-order effects, what a domain expert would expect to hear and didn't, contradictions (repo vs Ido, Ido vs Ido — raise, never pick silently).
+Read required skills before affected work using available loaders or SKILL.md paths. Reuse content already loaded in the same context. Report missing capabilities. For idoGen media work load applicable image/video/acting craft skills before writing generation prompts.
 
-Done when the frontier is empty and a competent stranger could build the right thing from the plan alone. Confirm the shared understanding, then move on.
+## 4. Approve plan and build choice
 
-**Persist as you go.** Create the plan draft at the first settled answers; append each round's decisions immediately. After a compaction, read the draft and resume from its `Status:` — never restart the grilling.
+Show the plan link and up to five short lines: outcome, scope, verification, build model/method, additions needing approval.
 
-Close by sketching the ordered phase list (names only). Step 2 needs it.
+Ask for approval once unless already explicitly granted. Approval covers the stated build choice, not a hidden fallback. "Plan only" ends here; otherwise approval authorizes the scoped build.
 
-## Step 2 — Map capabilities per phase
+Unavailable chosen model: request another choice or explicit continuation on the current one. A requested switch stays pending until confirmed. Preserve separate authorization for paid calls, live changes and releases; do not re-ask permissions already granted.
 
-Three kinds: **skills**, **connectors** (MCP), **plugins**. Skills are checked for every phase; connectors and plugins only when a phase needs them. Never force a weak match — "nothing good found" is a valid entry. Nothing is installed until Step 4.
+## 5. Execute on the accepted model
 
-**2a Skills.** Installed first. Then `find-skills` / `npx skills find <specific query>`. Before recommending an external one: prefer 1K+ installs and known orgs, and **read its SKILL.md** — frontmatter plus a scan of bundled scripts for anything you would refuse to run (exfil, credential access, destructive deletes). Use `skill-scout` if installed. Record phase, why, source.
+Choose one supported execution path:
+- Current model selected: execute here after approval, or delegate when useful.
+- Different model with supported delegation: use its verified host ID, absolute plan path and workspace. Cross-provider execution requires a real configured integration.
+- Manual switch required: save the plan, say "Plan ready. Switch to <model>, then say go." Stop before implementation. Never issue user-only commands or claim a switch happened. If identity cannot be read, label it user-confirmed.
 
-**2b Connectors** — only if a phase reads or writes live data in an external service. Check what is connected; search the registry (`mcp__mcp-registry__search_mcp_registry` via ToolSearch) or GitHub for gaps. You cannot authorize any of them. Record `connected` / `needs auth` / `not installed`.
+Claude Code adapter: [idos-builder.md](idos-builder.md) defaults to model: inherit. Use a supported per-invocation override only for an approved alternative. Check loaded agent and relevant settings before launch; older copies may still pin Sonnet. Do not rewrite a shared agent during an active run. Other hosts use their available delegation or execute directly; Claude-specific tool names are not required.
 
-**2c Plugins** — only if a phase wants a whole domain toolkit. `claude plugin list`, `claude plugin marketplace list|add`, `claude plugin install <plugin>@<marketplace>`, and `claude plugin details <name>` for the **projected token cost** — recommend only if the value clears it.
+Prefer foreground delegation where supported; otherwise collect results through available wait tools. Remain responsible for completion. Announce launch success only after confirmation. Record agent identifier and observed model when exposed, separating requested from observed. Configuration can override requests: pause/report detected mismatches before edits when possible.
 
-## Step 3 — Write the plan
+Pass plan path, workspace and only essential missing context. Separate agents still have their own instructions/tools and may inherit context; never promise zero tokens or zero history.
 
-Fill `plan-template.md` (next to this file) → `PLAN-<slug>.md` in the project directory the task is about (next to the code, in the current worktree). If one exists, read it and ask update-or-fresh; never overwrite silently. Record the absolute path.
+Read the execution body of idos-builder.md for direct and delegated builds. Verify workspace and existing task ownership; never launch two writers for the same work.
 
-Normal prose, not caveman. If `/ponytail` is stacked, the plan obeys it: fewest phases, stdlib first, nothing speculative. Match depth to the task — a plan longer than the work is its own problem.
+## 6. Verify, review, finish
 
-## Step 4 — Approval gate
+Run relevant plan gates and preserve outputs. Repeat expensive passed checks only for changed code/environment or unresolved evidence. Verify UI in the running app when possible; label live/device checks not performed.
 
-Show the path plus **≤ 5 caveman fragment lines** (phases in order, one clause each) and each Step 2 addition as one line (skill: name, phase, source; connector: auth state; plugin: install command, token cost). Ask for approval on the plan and each addition via `AskUserQuestion`. Apply edits. **Do not proceed until he approves.**
+Review the scoped diff independently when available and warranted, otherwise review directly and state that. Resolve material findings and rerun affected checks; avoid unbounded review loops. A missed required skill triggers a targeted compliance review after loading it, not blind reimplementation.
 
-On approval: skills via `npx skills add <owner/repo@skill> -g -y` (check `npx` exists first); plugins via `claude plugin install`; connectors are handed to Ido with the exact step — OAuth cannot run here. Report any failed install plainly and mark real status in the capability map. Declined → drop it, don't substitute. A phase blocked on an unauthorized connector is named in the launch block.
+Mark complete only after required work/checks finish; otherwise record blocked or partially verified. Brief report:
+- Built.
+- Model: requested / observed or unverified.
+- Verified; not verified and why (none is valid).
+- Skills/review.
+- Git/release state; open items.
 
-## Step 5 — Launch the build (mandatory, always last)
+## Resume and scope
 
-Spawn the **`idos-builder`** subagent (`~/.claude/agents/idos-builder.md`, `model: sonnet` — guaranteed by Claude Code's resolution order). If the definition is missing, copy `idos-builder.md` from this skill's directory to `~/.claude/agents/` first. It starts with a fresh context: the planning transcript never reaches it, and no model switch happens anywhere.
+Resume only in the original chat and workspace. Asked elsewhere: identify the original chat and stop; do not resume or message it without explicit authorization. Chats can share directories; verify ownership instead of assuming one worktree per chat.
 
-Print this block first:
+In the original chat read Progress, git status and recent evidence. Skip settled planning, continue unfinished work. Missing tool output means unknown result, not proof a process died or a chat closed. Check in-flight work before relaunching.
 
-```
-BUILD LAUNCHED — idos-builder subagent (Sonnet 5), fresh context
-
-Plan:        <absolute path to PLAN-<slug>.md>
-Running:     in the foreground — this turn stays busy until BUILD DONE.
-             Do not close or stop the chat; Esc kills the builder mid-run.
-             The gate (<real gate>) alone can take minutes.
-Blocked on:  <unauthorized connectors + which phase stalls, or "nothing">
-```
-
-Then spawn **in the foreground** (`run_in_background: false`) — a background spawn ends your turn, leaves an idle-looking prompt, and invites a chat close that kills the builder. Prompt is only the pointer:
-
-```
-Execute the plan at <absolute path to PLAN-<slug>.md>.
-```
-
-Phases wanting a different model run as their own subagent with that override, plan re-read included.
-
-**When the builder returns:**
-1. Check its `Skills loaded` line against the capability map. A listed skill it never loaded → relaunch that phase alone: "re-check Phase N against `<skill>`; load it first".
-2. Spawn `code-reviewer` on the diff (subagents cannot spawn subagents — this is your job). CRITICAL/HIGH go back to the builder through the plan file; MEDIUM and below are listed.
-3. Close with:
-
-```
-BUILD DONE — <slug>
-
-Model:        build ran on Sonnet 5 (idos-builder subagent); planner idle meanwhile
-Built:        <one line per phase>
-Verified:     <real gate + each Verify checkpoint, pass/fail>
-Not verified: <what could not be checked, and why — never empty for looks>
-Skills:       <loaded per phase, or "missed: <skill> in Phase N — re-checked">
-Review:       <code-reviewer verdict; open MEDIUM/LOW>
-Git:          <committed as <sha> | uncommitted | pushed — which files>
-Open:         <blockers, section-2 deviations, anything for Ido>
-```
-
-Corrections after that flow through the plan file, then a relaunch. You never write code.
-
-**Fallback — Agent tool unavailable:** one line for Ido, nothing else: new terminal → `claude --model claude-sonnet-5 "read <absolute path> and execute it"`.
-
-## When the build hits a wall
-
-Shared state between planner and builder is only `PLAN-<slug>.md`. Stall, blocker, or reality disagreeing with the plan → fix the plan (section 2 + `Status: revised`), relaunch. Re-run `/idos` only when the shape of the work changes.
-
-**Interrupted build** (Esc, chat closed, no BUILD DONE): edits are on disk, `Progress:` says which phases finished. **Resume in the same chat** — each chat owns its worktree; a new chat cannot see the uncommitted edits and would re-plan. On "resume", skip Steps 0–4 and relaunch foreground with `Resume the plan at <absolute path> from its Progress line.` If that chat is truly gone, start `claude` inside that same worktree folder.
-
-For a lightweight think-then-handoff without rounds, sourcing, or gates, Ido has `/planhandoff` — never both on one task.
+Record small corrections in the plan. Ask only about material scope/model/authorization changes. Do not clear context, create another chat or migrate work merely to reduce tokens.
